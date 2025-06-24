@@ -28,14 +28,14 @@ from rclpy.lifecycle import TransitionCallbackReturn
 from rclpy.lifecycle import LifecycleState
 
 import torch
-from ultralytics import YOLO, YOLOWorld
+from ultralytics import YOLO, YOLOWorld, YOLOE
 from ultralytics.engine.results import Results
 from ultralytics.engine.results import Boxes
 from ultralytics.engine.results import Masks
 from ultralytics.engine.results import Keypoints
 
 from std_srvs.srv import SetBool
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image,CompressedImage
 from yolo_msgs.msg import Point2D
 from yolo_msgs.msg import BoundingBox2D
 from yolo_msgs.msg import Mask
@@ -69,7 +69,7 @@ class YoloNode(LifecycleNode):
         self.declare_parameter("agnostic_nms", False)
         self.declare_parameter("retina_masks", False)
 
-        self.type_to_model = {"YOLO": YOLO, "World": YOLOWorld}
+        self.type_to_model = {"YOLO": YOLO, "World": YOLOWorld, "YOLOE": YOLOE}
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
         self.get_logger().info(f"[{self.get_name()}] Configuring...")
@@ -132,6 +132,7 @@ class YoloNode(LifecycleNode):
 
         try:
             self.yolo = self.type_to_model[self.model_type](self.model)
+            self.yolo.to(self.device)
         except FileNotFoundError:
             self.get_logger().error(f"Model file '{self.model}' does not exists")
             return TransitionCallbackReturn.ERROR
@@ -144,13 +145,13 @@ class YoloNode(LifecycleNode):
 
         self._enable_srv = self.create_service(SetBool, "enable", self.enable_cb)
 
-        if isinstance(self.yolo, YOLOWorld):
+        if isinstance(self.yolo, YOLOWorld) or isinstance(self.yolo, YOLOE):
             self._set_classes_srv = self.create_service(
                 SetClasses, "set_classes", self.set_classes_cb
             )
 
         self._sub = self.create_subscription(
-            Image, "image_raw", self.image_cb, self.image_qos_profile
+            CompressedImage, "image_raw", self.image_cb, self.image_qos_profile
         )
 
         super().on_activate(state)
@@ -169,7 +170,7 @@ class YoloNode(LifecycleNode):
         self.destroy_service(self._enable_srv)
         self._enable_srv = None
 
-        if isinstance(self.yolo, YOLOWorld):
+        if isinstance(self.yolo, YOLOWorld) or isinstance(self.yolo, YOLOE):
             self.destroy_service(self._set_classes_srv)
             self._set_classes_srv = None
 
@@ -324,12 +325,12 @@ class YoloNode(LifecycleNode):
 
         return keypoints_list
 
-    def image_cb(self, msg: Image) -> None:
+    def image_cb(self, msg: CompressedImage) -> None:
 
         if self.enable:
 
             # convert image + predict
-            cv_image = self.cv_bridge.imgmsg_to_cv2(
+            cv_image = self.cv_bridge.compressed_imgmsg_to_cv2(
                 msg, desired_encoding=self.yolo_encoding
             )
             results = self.yolo.predict(
@@ -393,7 +394,10 @@ class YoloNode(LifecycleNode):
         res: SetClasses.Response,
     ) -> SetClasses.Response:
         self.get_logger().info(f"Setting classes: {req.classes}")
-        self.yolo.set_classes(req.classes)
+        if isinstance(self.yolo, YOLOWorld):
+            self.yolo.set_classes(req.classes)
+        elif isinstance(self.yolo, YOLOE):
+            self.yolo.set_classes(req.classes, self.yolo.get_text_pe(req.classes))
         self.get_logger().info(f"New classes: {self.yolo.names}")
         return res
 
