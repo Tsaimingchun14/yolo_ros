@@ -29,10 +29,12 @@ ROS 2 wrap for YOLO models from [Ultralytics](https://github.com/ultralytics/ult
 ## Installation
 
 ```shell
-cd ~/ros2_ws/src
-git clone https://github.com/mgonzs13/yolo_ros.git
-pip3 install -r yolo_ros/requirements.txt
-cd ~/ros2_ws
+pip install --upgrade pip 
+pip install git+https://github.com/THU-MIG/yoloe.git#subdirectory=third_party/CLIP
+pip install git+https://github.com/THU-MIG/yoloe.git#subdirectory=third_party/ml-mobileclip
+pip install git+https://github.com/THU-MIG/yoloe.git#subdirectory=third_party/lvis-api
+pip install git+https://github.com/THU-MIG/yoloe.git
+pip3 install -r src/yolo_ros/requirements.txt
 rosdep install --from-paths src --ignore-src -r -y
 colcon build
 ```
