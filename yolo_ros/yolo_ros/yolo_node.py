@@ -136,7 +136,10 @@ class YoloNode(LifecycleNode):
         except FileNotFoundError:
             self.get_logger().error(f"Model file '{self.model}' does not exists")
             return TransitionCallbackReturn.ERROR
-
+        except Exception as e:
+            # Catch any other unexpected errors
+            self.get_logger().error(f"Unexpected error while loading model: {repr(e)}")
+            return TransitionCallbackReturn.ERROR
         # try:
         #     self.get_logger().info("Trying to fuse model...")
         #     self.yolo.fuse()

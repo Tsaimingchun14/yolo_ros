@@ -35,6 +35,7 @@ pip install git+https://github.com/THU-MIG/yoloe.git#subdirectory=third_party/ml
 pip install git+https://github.com/THU-MIG/yoloe.git#subdirectory=third_party/lvis-api
 pip install git+https://github.com/THU-MIG/yoloe.git
 pip3 install -r src/yolo_ros/requirements.txt
+rosdep update
 rosdep install --from-paths src --ignore-src -r -y
 colcon build
 ```
