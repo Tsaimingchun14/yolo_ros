@@ -328,7 +328,7 @@ def generate_launch_description():
             yolo_node_cmd,
             tracking_node_cmd,
             detect_3d_node_cmd,
-            debug_node_cmd,
+            #debug_node_cmd,
         )
 
     use_tracking = LaunchConfiguration("use_tracking")
