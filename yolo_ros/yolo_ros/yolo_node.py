@@ -452,6 +452,12 @@ class YoloNode(LifecycleNode):
                     if box.conf > largest_conf:
                         largest_conf = box.conf
                         x, y = (i, j)
+        
+        def create_point2d(x: float, y: float) -> Point2D:
+            p = Point2D()
+            p.x = x
+            p.y = y
+            return p
 
         detection_msg = None
         img_id = -1

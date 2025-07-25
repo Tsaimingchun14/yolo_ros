@@ -1,4 +1,4 @@
 string[] classes
 ---
 yolo_msgs/Detection detection
-int32 img_id
+int16 img_id
